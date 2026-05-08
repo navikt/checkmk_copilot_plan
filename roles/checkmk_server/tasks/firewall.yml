@@ -1,0 +1,22 @@
+---
+- name: Ensure firewalld is started
+  ansible.builtin.systemd:
+    name: firewalld
+    enabled: true
+    state: started
+
+- name: Allow HTTP traffic through firewall
+  ansible.posix.firewalld:
+    service: http
+    zone: "{{ checkmk_firewall_zone }}"
+    permanent: true
+    state: enabled
+  notify: Reload firewalld
+
+- name: Allow HTTPS traffic through firewall
+  ansible.posix.firewalld:
+    service: https
+    zone: "{{ checkmk_firewall_zone }}"
+    permanent: true
+    state: enabled
+  notify: Reload firewalld

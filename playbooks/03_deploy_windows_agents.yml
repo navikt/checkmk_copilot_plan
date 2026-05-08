@@ -1,0 +1,5 @@
+---
+- name: Deploy CheckMK agent on Windows hosts
+  hosts: windows_hosts
+  roles:
+    - role: checkmk_agent_windows

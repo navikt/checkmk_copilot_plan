@@ -1,0 +1,6 @@
+---
+- name: Install and configure CheckMK server
+  hosts: checkmk_server
+  become: true
+  roles:
+    - role: checkmk_server

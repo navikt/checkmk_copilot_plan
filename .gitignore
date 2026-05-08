@@ -1,0 +1,7 @@
+*.retry
+*.pyc
+__pycache__/
+.vault_password
+vault_password_file
+*.swp
+.DS_Store

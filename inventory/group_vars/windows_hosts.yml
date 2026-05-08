@@ -1,0 +1,6 @@
+---
+# Windows-specific overrides
+ansible_shell_type: powershell
+ansible_connection: winrm
+ansible_winrm_transport: ntlm
+ansible_winrm_server_cert_validation: ignore

@@ -1,0 +1,45 @@
+---
+- name: Configure SMTP relay settings in CheckMK
+  ansible.builtin.uri:
+    url: "{{ checkmk_server_url }}/api/1.0/domain-types/notification_rule/collections/all"
+    method: POST
+    user: "{{ checkmk_api_user }}"
+    password: "{{ checkmk_api_secret }}"
+    force_basic_auth: true
+    body_format: json
+    body:
+      rule_config:
+        description: "Email all CRIT/WARN/UNKN to ops-team (Ansible)"
+        notify_plugin:
+          option: "single_plugin"
+          plugin_name: "mail"
+          plugin_params:
+            from:
+              address: "{{ checkmk_smtp_from }}"
+            smtp_server: "{{ checkmk_smtp_host }}"
+            smtp_port: "{{ checkmk_smtp_port }}"
+            smtp_auth:
+              user: "{{ checkmk_smtp_user }}"
+              password: "{{ checkmk_smtp_password }}"
+        contact_selection:
+          option: "all_contacts_of_the_notified_object"
+        conditions:
+          host_event_type:
+            - "rd"
+            - "ru"
+            - "dr"
+            - "du"
+          service_event_type:
+            - "rw"
+            - "rc"
+            - "ru"
+            - "wc"
+            - "wr"
+            - "wu"
+            - "cr"
+            - "cw"
+            - "cu"
+    status_code: [200, 201]
+    validate_certs: false
+  register: email_notify_result
+  changed_when: email_notify_result.status in [200, 201]

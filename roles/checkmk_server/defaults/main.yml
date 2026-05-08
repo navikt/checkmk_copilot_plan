@@ -1,0 +1,8 @@
+---
+checkmk_version: "2.3.0p1"
+checkmk_edition: "raw"
+checkmk_site: "monitoring"
+checkmk_admin_user: "cmkadmin"
+checkmk_admin_password: "changeme"
+checkmk_firewall_zone: "public"
+checkmk_http_port: "80"

@@ -1,0 +1,34 @@
+---
+- name: Configure Microsoft Teams notification rule in CheckMK
+  ansible.builtin.uri:
+    url: "{{ checkmk_server_url }}/api/1.0/domain-types/notification_rule/collections/all"
+    method: POST
+    user: "{{ checkmk_api_user }}"
+    password: "{{ checkmk_api_secret }}"
+    force_basic_auth: true
+    body_format: json
+    body:
+      rule_config:
+        description: "MS Teams notifications for CRIT/WARN (Ansible)"
+        notify_plugin:
+          option: "single_plugin"
+          plugin_name: "msteams"
+          plugin_params:
+            webhook_url:
+              option: "explicit_webhooks"
+              url: "{{ checkmk_teams_webhook_url }}"
+        contact_selection:
+          option: "all_contacts_of_the_notified_object"
+        conditions:
+          host_event_type:
+            - "rd"
+            - "ru"
+          service_event_type:
+            - "rw"
+            - "rc"
+            - "wc"
+            - "cr"
+    status_code: [200, 201]
+    validate_certs: false
+  register: teams_notify_result
+  changed_when: teams_notify_result.status in [200, 201]

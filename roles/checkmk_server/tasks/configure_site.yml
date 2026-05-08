@@ -1,0 +1,21 @@
+---
+- name: Check if site already exists
+  ansible.builtin.command: omd sites
+  register: omd_sites_output
+  changed_when: false
+
+- name: Create CheckMK monitoring site
+  ansible.builtin.command: >
+    omd create --admin-password {{ checkmk_admin_password }} {{ checkmk_site }}
+  when: checkmk_site not in omd_sites_output.stdout
+  notify: Start CheckMK site
+
+- name: Ensure CheckMK site is started
+  ansible.builtin.command: omd status {{ checkmk_site }}
+  register: omd_status
+  changed_when: false
+  failed_when: false
+
+- name: Start CheckMK site if not running
+  ansible.builtin.command: omd start {{ checkmk_site }}
+  when: "'running' not in omd_status.stdout"

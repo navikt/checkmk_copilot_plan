@@ -1,0 +1,8 @@
+---
+- name: Start CheckMK site
+  ansible.builtin.command: omd start {{ checkmk_site }}
+
+- name: Reload firewalld
+  ansible.builtin.systemd:
+    name: firewalld
+    state: reloaded

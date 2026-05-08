@@ -1,0 +1,75 @@
+---
+# ──────────────────────────────────────────────
+# CheckMK server settings
+# ──────────────────────────────────────────────
+checkmk_version: "2.3.0p1"
+checkmk_edition: "raw"          # raw = community / free edition
+checkmk_site: "monitoring"
+checkmk_server_url: "http://{{ groups['checkmk_server'][0] }}/{{ checkmk_site }}"
+
+# Admin user created at site initialisation
+checkmk_admin_user: "cmkadmin"
+checkmk_admin_password: "{{ vault_checkmk_admin_password }}"
+
+# Automation user (used by Ansible roles to call REST API)
+checkmk_api_user: "automation"
+checkmk_api_secret: "{{ vault_checkmk_api_secret }}"
+
+# ──────────────────────────────────────────────
+# Firewall
+# ──────────────────────────────────────────────
+checkmk_firewall_zone: "public"
+checkmk_http_port: "80"
+
+# ──────────────────────────────────────────────
+# Agent settings
+# ──────────────────────────────────────────────
+checkmk_agent_port: 6556
+checkmk_agent_folder: "/"   # CheckMK folder to register hosts in
+
+# ──────────────────────────────────────────────
+# SNMP settings
+# ──────────────────────────────────────────────
+checkmk_snmp_community: "{{ vault_snmp_community }}"
+checkmk_snmp_version: "2c"    # default; can be overridden per host
+
+# ──────────────────────────────────────────────
+# Notifications
+# ──────────────────────────────────────────────
+# Email / SMTP
+checkmk_notify_email_enabled: true
+checkmk_smtp_host: "smtp.example.com"
+checkmk_smtp_port: 587
+checkmk_smtp_from: "checkmk@example.com"
+checkmk_smtp_user: "{{ vault_smtp_user }}"
+checkmk_smtp_password: "{{ vault_smtp_password }}"
+checkmk_notify_email_to: "ops-team@example.com"
+
+# Slack
+checkmk_notify_slack_enabled: true
+checkmk_slack_webhook_url: "{{ vault_slack_webhook_url }}"
+
+# Microsoft Teams
+checkmk_notify_teams_enabled: false
+checkmk_teams_webhook_url: "{{ vault_teams_webhook_url }}"
+
+# ──────────────────────────────────────────────
+# Vault-encrypted secrets (set with: ansible-vault encrypt_string)
+# ──────────────────────────────────────────────
+# vault_checkmk_admin_password: !vault |
+#   $ANSIBLE_VAULT;1.1;AES256
+#   ...
+# vault_checkmk_api_secret: !vault |
+#   ...
+# vault_snmp_community: !vault |
+#   ...
+# vault_smtp_user: !vault |
+#   ...
+# vault_smtp_password: !vault |
+#   ...
+# vault_slack_webhook_url: !vault |
+#   ...
+# vault_teams_webhook_url: !vault |
+#   ...
+# vault_windows_ansible_password: !vault |
+#   ...

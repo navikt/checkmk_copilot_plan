@@ -1,0 +1,80 @@
+---
+- name: Download CheckMK Windows agent MSI from server
+  ansible.windows.win_get_url:
+    url: "{{ checkmk_server_url }}/check_mk/agents/windows/check_mk_agent.msi"
+    dest: 'C:\Windows\Temp\check_mk_agent.msi'
+    validate_certs: false
+
+- name: Install CheckMK Windows agent silently
+  ansible.windows.win_package:
+    path: 'C:\Windows\Temp\check_mk_agent.msi'
+    state: present
+    arguments: /qn
+
+- name: Open CheckMK agent port in Windows Firewall
+  community.windows.win_firewall_rule:
+    name: "CheckMK Agent"
+    localport: "{{ checkmk_agent_port }}"
+    protocol: tcp
+    direction: in
+    action: allow
+    state: present
+    enabled: true
+
+- name: Ensure CheckMK agent service is running
+  ansible.windows.win_service:
+    name: CheckMKService
+    state: started
+    start_mode: auto
+
+- name: Register Windows host in CheckMK via REST API
+  ansible.builtin.uri:
+    url: "{{ checkmk_server_url }}/api/1.0/domain-types/host_config/collections/all"
+    method: POST
+    user: "{{ checkmk_api_user }}"
+    password: "{{ checkmk_api_secret }}"
+    force_basic_auth: true
+    body_format: json
+    body:
+      host_name: "{{ inventory_hostname }}"
+      folder: "{{ checkmk_agent_folder }}"
+      attributes:
+        ipaddress: "{{ ansible_host | default(inventory_hostname) }}"
+        tag_agent: "cmk-agent"
+    status_code: [200, 201, 422]
+    validate_certs: false
+  register: host_reg_result
+  changed_when: host_reg_result.status in [200, 201]
+  delegate_to: localhost
+
+- name: Run service discovery
+  ansible.builtin.uri:
+    url: "{{ checkmk_server_url }}/api/1.0/domain-types/service_discovery_run/collections/all"
+    method: POST
+    user: "{{ checkmk_api_user }}"
+    password: "{{ checkmk_api_secret }}"
+    force_basic_auth: true
+    body_format: json
+    body:
+      host_name: "{{ inventory_hostname }}"
+      mode: "fix_all"
+    status_code: [200, 201, 204]
+    validate_certs: false
+  delegate_to: localhost
+
+- name: Activate pending changes
+  ansible.builtin.uri:
+    url: "{{ checkmk_server_url }}/api/1.0/domain-types/activation_run/collections/activate-changes"
+    method: POST
+    user: "{{ checkmk_api_user }}"
+    password: "{{ checkmk_api_secret }}"
+    force_basic_auth: true
+    body_format: json
+    body:
+      force_foreign_changes: true
+      sites:
+        - "{{ checkmk_site }}"
+    status_code: [200, 201, 204, 422]
+    validate_certs: false
+  delegate_to: localhost
+  run_once: true

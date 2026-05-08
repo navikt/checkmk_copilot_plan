@@ -1,0 +1,15 @@
+---
+- name: Configure email notifications
+  import_tasks: email.yml
+  when: checkmk_notify_email_enabled | bool
+
+- name: Configure Slack notifications
+  import_tasks: slack.yml
+  when: checkmk_notify_slack_enabled | bool
+
+- name: Configure Microsoft Teams notifications
+  import_tasks: teams.yml
+  when: checkmk_notify_teams_enabled | bool
+
+- name: Create ops-team contact group
+  import_tasks: contact_group.yml

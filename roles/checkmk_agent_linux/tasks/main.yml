@@ -1,0 +1,90 @@
+---
+- name: Detect package manager
+  set_fact:
+    checkmk_agent_pkg_ext: "{{ 'deb' if ansible_os_family == 'Debian' else 'rpm' }}"
+
+- name: Download CheckMK agent package from server
+  ansible.builtin.get_url:
+    url: "{{ checkmk_server_url }}/check_mk/agents/check-mk-agent-{{ checkmk_version }}-1.{{ checkmk_agent_pkg_ext }}"
+    dest: "/tmp/check-mk-agent.{{ checkmk_agent_pkg_ext }}"
+    validate_certs: false
+    mode: "0644"
+
+- name: Install CheckMK agent (RPM)
+  ansible.builtin.dnf:
+    name: "/tmp/check-mk-agent.rpm"
+    state: present
+    disable_gpg_check: true
+  when: checkmk_agent_pkg_ext == 'rpm'
+
+- name: Install CheckMK agent (DEB)
+  ansible.builtin.apt:
+    deb: "/tmp/check-mk-agent.deb"
+    state: present
+  when: checkmk_agent_pkg_ext == 'deb'
+
+- name: Enable and start check-mk-agent socket
+  ansible.builtin.systemd:
+    name: check-mk-agent.socket
+    enabled: true
+    state: started
+
+- name: Open CheckMK agent port in firewall (RHEL/Rocky)
+  ansible.posix.firewalld:
+    port: "{{ checkmk_agent_port }}/tcp"
+    permanent: true
+    state: enabled
+    immediate: true
+  when: ansible_os_family == 'RedHat'
+  ignore_errors: true  # firewalld may not be present on all hosts
+
+- name: Register host in CheckMK via REST API
+  ansible.builtin.uri:
+    url: "{{ checkmk_server_url }}/api/1.0/domain-types/host_config/collections/all"
+    method: POST
+    user: "{{ checkmk_api_user }}"
+    password: "{{ checkmk_api_secret }}"
+    force_basic_auth: true
+    body_format: json
+    body:
+      host_name: "{{ inventory_hostname }}"
+      folder: "{{ checkmk_agent_folder }}"
+      attributes:
+        ipaddress: "{{ ansible_host | default(inventory_hostname) }}"
+    status_code: [200, 201, 422]
+    validate_certs: false
+  register: host_reg_result
+  changed_when: host_reg_result.status in [200, 201]
+  delegate_to: localhost
+
+- name: Run service discovery
+  ansible.builtin.uri:
+    url: "{{ checkmk_server_url }}/api/1.0/domain-types/service_discovery_run/collections/all"
+    method: POST
+    user: "{{ checkmk_api_user }}"
+    password: "{{ checkmk_api_secret }}"
+    force_basic_auth: true
+    body_format: json
+    body:
+      host_name: "{{ inventory_hostname }}"
+      mode: "fix_all"
+    status_code: [200, 201, 204]
+    validate_certs: false
+  delegate_to: localhost
+
+- name: Activate pending changes
+  ansible.builtin.uri:
+    url: "{{ checkmk_server_url }}/api/1.0/domain-types/activation_run/collections/activate-changes"
+    method: POST
+    user: "{{ checkmk_api_user }}"
+    password: "{{ checkmk_api_secret }}"
+    force_basic_auth: true
+    body_format: json
+    body:
+      force_foreign_changes: true
+      sites:
+        - "{{ checkmk_site }}"
+    status_code: [200, 201, 204, 422]
+    validate_certs: false
+  delegate_to: localhost
+  run_once: true

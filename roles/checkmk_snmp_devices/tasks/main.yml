@@ -1,0 +1,56 @@
+---
+- name: Register SNMP device in CheckMK via REST API
+  ansible.builtin.uri:
+    url: "{{ checkmk_server_url }}/api/1.0/domain-types/host_config/collections/all"
+    method: POST
+    user: "{{ checkmk_api_user }}"
+    password: "{{ checkmk_api_secret }}"
+    force_basic_auth: true
+    body_format: json
+    body:
+      host_name: "{{ inventory_hostname }}"
+      folder: "{{ checkmk_agent_folder }}"
+      attributes:
+        ipaddress: "{{ ansible_host | default(inventory_hostname) }}"
+        tag_agent: "no-agent"
+        tag_snmp_ds: "snmp-v{{ '3' if checkmk_snmp_version == '3' else '2' }}"
+        snmp_community:
+          type: "v{{ '3' if checkmk_snmp_version == '3' else '2c' }}_without_privacy"
+          community: "{{ checkmk_snmp_community }}"
+    status_code: [200, 201, 422]
+    validate_certs: false
+  register: snmp_host_result
+  changed_when: snmp_host_result.status in [200, 201]
+  delegate_to: localhost
+
+- name: Run service discovery on SNMP device
+  ansible.builtin.uri:
+    url: "{{ checkmk_server_url }}/api/1.0/domain-types/service_discovery_run/collections/all"
+    method: POST
+    user: "{{ checkmk_api_user }}"
+    password: "{{ checkmk_api_secret }}"
+    force_basic_auth: true
+    body_format: json
+    body:
+      host_name: "{{ inventory_hostname }}"
+      mode: "fix_all"
+    status_code: [200, 201, 204]
+    validate_certs: false
+  delegate_to: localhost
+
+- name: Activate pending changes
+  ansible.builtin.uri:
+    url: "{{ checkmk_server_url }}/api/1.0/domain-types/activation_run/collections/activate-changes"
+    method: POST
+    user: "{{ checkmk_api_user }}"
+    password: "{{ checkmk_api_secret }}"
+    force_basic_auth: true
+    body_format: json
+    body:
+      force_foreign_changes: true
+      sites:
+        - "{{ checkmk_site }}"
+    status_code: [200, 201, 204, 422]
+    validate_certs: false
+  delegate_to: localhost
+  run_once: true

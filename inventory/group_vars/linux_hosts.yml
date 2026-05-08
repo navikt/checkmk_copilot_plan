@@ -1,0 +1,3 @@
+---
+# Linux-specific overrides (inherits all.yml defaults)
+ansible_python_interpreter: /usr/bin/python3

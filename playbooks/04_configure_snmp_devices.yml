@@ -1,0 +1,6 @@
+---
+- name: Add SNMP / network devices to CheckMK
+  hosts: network_devices
+  gather_facts: false
+  roles:
+    - role: checkmk_snmp_devices

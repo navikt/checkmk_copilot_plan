@@ -1,0 +1,21 @@
+---
+- name: Create automation API user via CheckMK REST API
+  ansible.builtin.uri:
+    url: "{{ checkmk_server_url }}/api/1.0/domain-types/user_config/collections/all"
+    method: POST
+    user: "{{ checkmk_admin_user }}"
+    password: "{{ checkmk_admin_password }}"
+    force_basic_auth: true
+    body_format: json
+    body:
+      username: "{{ checkmk_api_user }}"
+      fullname: "Ansible Automation User"
+      auth_option:
+        auth_type: "automation"
+        secret: "{{ checkmk_api_secret }}"
+      roles:
+        - "admin"
+    status_code: [200, 201, 422]  # 422 = already exists
+    validate_certs: false
+  register: api_user_result
+  changed_when: api_user_result.status in [200, 201]

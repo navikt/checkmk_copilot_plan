@@ -1,0 +1,3 @@
+---
+# Network devices — no SSH, monitored via SNMP only
+ansible_connection: local

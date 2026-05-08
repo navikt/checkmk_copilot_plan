@@ -1,0 +1,12 @@
+---
+- name: Install CheckMK server
+  import_tasks: install.yml
+
+- name: Configure CheckMK site
+  import_tasks: configure_site.yml
+
+- name: Configure firewall
+  import_tasks: firewall.yml
+
+- name: Create automation API user
+  import_tasks: api_user.yml

@@ -1,0 +1,6 @@
+---
+- name: Deploy CheckMK agent on Linux hosts
+  hosts: linux_hosts
+  become: true
+  roles:
+    - role: checkmk_agent_linux

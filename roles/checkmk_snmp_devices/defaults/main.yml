@@ -1,0 +1,7 @@
+---
+checkmk_snmp_version: "2c"
+checkmk_snmp_community: "public"
+checkmk_agent_folder: "/"
+checkmk_server_url: "http://checkmk01.example.com/monitoring"
+checkmk_api_user: "automation"
+checkmk_api_secret: "changeme"

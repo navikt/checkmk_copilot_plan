@@ -1,0 +1,16 @@
+---
+- name: Create ops-team contact group in CheckMK
+  ansible.builtin.uri:
+    url: "{{ checkmk_server_url }}/api/1.0/domain-types/contact_group_config/collections/all"
+    method: POST
+    user: "{{ checkmk_api_user }}"
+    password: "{{ checkmk_api_secret }}"
+    force_basic_auth: true
+    body_format: json
+    body:
+      name: "ops-team"
+      alias: "Operations Team"
+    status_code: [200, 201, 422]
+    validate_certs: false
+  register: contact_group_result
+  changed_when: contact_group_result.status in [200, 201]

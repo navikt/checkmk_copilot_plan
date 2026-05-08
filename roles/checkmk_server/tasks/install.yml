@@ -1,0 +1,32 @@
+---
+- name: Detect OS family and set RPM URL
+  set_fact:
+    checkmk_rpm_url: "https://download.checkmk.com/checkmk/{{ checkmk_version }}/check-mk-{{ checkmk_edition }}-{{ checkmk_version }}-el9-38.x86_64.rpm"
+
+- name: Install prerequisite packages
+  ansible.builtin.dnf:
+    name:
+      - httpd
+      - cronie
+      - postfix
+    state: present
+
+- name: Download CheckMK RPM
+  ansible.builtin.get_url:
+    url: "{{ checkmk_rpm_url }}"
+    dest: "/tmp/checkmk-{{ checkmk_version }}.rpm"
+    mode: "0644"
+  register: checkmk_rpm_download
+
+- name: Install CheckMK RPM
+  ansible.builtin.dnf:
+    name: "/tmp/checkmk-{{ checkmk_version }}.rpm"
+    state: present
+    disable_gpg_check: true
+  when: checkmk_rpm_download is changed or ansible_check_mode
+
+- name: Enable and start httpd
+  ansible.builtin.systemd:
+    name: httpd
+    enabled: true
+    state: started

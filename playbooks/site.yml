@@ -1,0 +1,23 @@
+---
+# Master playbook — runs full CheckMK setup end-to-end
+# Usage: ansible-playbook -i inventory/hosts.yml playbooks/site.yml --ask-vault-pass
+
+- name: Install and configure CheckMK server
+  import_playbook: 01_install_checkmk_server.yml
+  tags: [server]
+
+- name: Deploy Linux agents
+  import_playbook: 02_deploy_linux_agents.yml
+  tags: [linux, agents]
+
+- name: Deploy Windows agents
+  import_playbook: 03_deploy_windows_agents.yml
+  tags: [windows, agents]
+
+- name: Configure SNMP / network devices
+  import_playbook: 04_configure_snmp_devices.yml
+  tags: [snmp, network]
+
+- name: Configure notifications
+  import_playbook: 05_configure_notifications.yml
+  tags: [notifications]
